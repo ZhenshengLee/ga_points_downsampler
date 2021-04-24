@@ -1,0 +1,10 @@
+<launch>
+    <!-- 发送点云 -->
+    <node pkg="pcl_ros" type="pcd_to_pointcloud" name="target_pcd_to_pointcloud" args="$(find ga_perception_res)/res/pcd/twoobstacle.pcd 0.1" output="screen">
+        <remap from="cloud_pcd" to="/rslidar_points" />
+    </node>
+
+    <node pkg="tf2_ros" type="static_transform_publisher" name="base_link_to_pointcloud_frame" args="0 0.0  0 0 0 0 base_link /gpuac/pointcloud_frame" />
+
+    <!-- <node name="rviz" pkg="rviz" type="rviz" args="-d $(find ga_cupoch_test)/rviz/cupoch_test_normal.rviz" required="false" /> -->
+</launch>
