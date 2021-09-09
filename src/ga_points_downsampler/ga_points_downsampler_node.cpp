@@ -11,8 +11,8 @@ int main(int argc, char **argv)
 #else
     // use managed memory allocation to speed up memcpy
     // utility::InitializeAllocator();
-    // cupoch::utility::InitializeAllocator(cupoch::utility::PoolAllocation, 1000000000);
-    cupoch::utility::InitializeAllocator(cupoch::utility::CudaManagedMemory, 1000000000);
+    cupoch::utility::InitializeAllocator(cupoch::utility::PoolAllocation, 1000000000);
+    // cupoch::utility::InitializeAllocator(cupoch::utility::CudaManagedMemory, 1000000000);
 #endif
 
     gpuac::CupochDownSampler cupoch_downsampler(nh);
