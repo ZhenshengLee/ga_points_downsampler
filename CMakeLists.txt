@@ -7,20 +7,20 @@ find_package(catkin REQUIRED COMPONENTS
         sensor_msgs
         diagnostic_msgs
         ga_cmake
-        cupoch_contrib
+        # cupoch_contrib
         pcl_conversions
         cuda_pcl_ros
         geometry_msgs
         nav_msgs
         message_generation
         cupoch_conversions
-        open3d_conversions
+        # open3d_conversions
         )
 
 find_package(GFlags REQUIRED QUIET)
 find_package(CUDA REQUIRED QUIET)
 find_package(PCL REQUIRED QUIET)
-find_package(Open3D REQUIRED QUIET)
+# find_package(Open3D REQUIRED QUIET)
 find_package(thrust REQUIRED QUIET)
 
 GA_CHECK_CUDA()
@@ -45,10 +45,10 @@ catkin_package(
         roscpp
         sensor_msgs
         ga_cmake
-        cupoch_contrib
+        # cupoch_contrib
         std_msgs
         cupoch_conversions
-        open3d_conversions
+        # open3d_conversions
 )
 
 

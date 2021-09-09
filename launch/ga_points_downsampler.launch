@@ -2,7 +2,7 @@
 <launch>
     <node pkg="ga_points_downsampler" type="ga_points_downsampler" name="ga_points_downsampler" output="screen">
         <param name="is_downsample" value="true" />
-        <param name="is_pub_pc" value="true" />
+        <param name="is_pub_pc" value="false" />
         <param name="is_use_gpu" value="true" />
         <!-- <param name="is_use_open3d" value="false" /> -->
         <param name="downsample_res" value="1.0" />

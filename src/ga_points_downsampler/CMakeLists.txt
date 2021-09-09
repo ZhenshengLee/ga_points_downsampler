@@ -17,7 +17,7 @@ target_link_libraries(${EXE_NAME}
         ${Open3D_LIBRARIES}
         ${PCL_LIBRARIES}
         cupoch_conversions
-        open3d_conversions
+        # open3d_conversions
 )
 add_dependencies(${EXE_NAME}
         ${catkin_EXPORTED_TARGETS}
