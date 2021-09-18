@@ -18,7 +18,15 @@ int main(int argc, char **argv)
     gpuac::CupochDownSampler cupoch_downsampler(nh);
 
     // ros::MultiThreadedSpinner spinner(std::thread::hardware_concurrency());
-    ros::MultiThreadedSpinner spinner(4);
-    ros::spin(spinner);
+    // ros::MultiThreadedSpinner spinner(4);
+    int count = 20;
+    ros::Rate loop_rate(10);
+    while(count--)
+    {
+        ros::spinOnce();
+        loop_rate.sleep();
+    }
+    ros::shutdown();
+    // ros::spin(spinner);
     return 0;
 }

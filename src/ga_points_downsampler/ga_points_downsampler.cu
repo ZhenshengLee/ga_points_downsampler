@@ -13,7 +13,7 @@ CupochDownSampler::CupochDownSampler(ros::NodeHandle& nh)
 CupochDownSampler::~CupochDownSampler()
 {
     m_detect_cupoch_thread_enable = false;
-    m_detect_cupoch_thread->join();
+    // m_detect_cupoch_thread->join();
     ROS_INFO("cupoch_test_normal threads joined");
 }
 
@@ -30,7 +30,7 @@ void CupochDownSampler::init()
 void CupochDownSampler::initializeThread()
 {
     m_detect_cupoch_thread_enable = true;
-    m_detect_cupoch_thread = std::make_shared<std::thread>(std::bind(&CupochDownSampler::detect_cupoch_thread, this));
+    // m_detect_cupoch_thread = std::make_shared<std::thread>(std::bind(&CupochDownSampler::detect_cupoch_thread, this));
 }
 
 void CupochDownSampler::initializeSubPub()
@@ -184,7 +184,7 @@ void CupochDownSampler::points_callback(const sensor_msgs::PointCloud2ConstPtr& 
     ROS_INFO_STREAM_ONCE("points_callback");
 
     // std::lock_guard<std::mutex> detect_pcl_guard(m_detect_pcl_mutex);
-    std::lock_guard<std::mutex> detect_cupoch_guard(m_detect_cupoch_mutex);
+    // std::lock_guard<std::mutex> detect_cupoch_guard(m_detect_cupoch_mutex);
     // 新来的数据赋值给成员
 
     auto t1 = ros::WallTime::now();
@@ -209,7 +209,116 @@ void CupochDownSampler::points_callback(const sensor_msgs::PointCloud2ConstPtr& 
     ROS_INFO_STREAM("detect_cupoch_thread rosToCupoch time: " << (t2 - t1).toSec() * 1000.0 << "[ms]");
 
     // 通知线程可以处理了
-    m_detect_cupoch_cond.notify_one();
+    // m_detect_cupoch_cond.notify_one();
+
+    ROS_INFO_ONCE("detect_cupoch_thread working now!");
+
+    if (m_is_use_gpu)
+    {
+      if (m_is_use_open3d)
+      {
+        // if (!m_points_open3d_cloud->HasPoints())
+        {
+          // ROS_ERROR("m_points_open3d_cloud is empty!!");
+          return;
+        }
+        // ROS_INFO("m_detect_open3d_thread-PointCloud size is %d .", m_points_open3d_cloud->points_.size());
+      }
+      else
+      {
+        if (!m_points_cupoch_cloud->HasPoints())
+        {
+          ROS_ERROR("m_points_cupoch_cloud is empty!!");
+          return;
+        }
+        ROS_INFO("m_detect_cupoch_thread-PointCloud size is %d .", m_points_cupoch_cloud->points_.size());
+      }
+    }
+
+    auto start = ros::WallTime::now();
+    auto end = ros::WallTime::now();
+    t1 = ros::WallTime::now();
+    t2 = ros::WallTime::now();
+
+    auto filtered_cupoch_cloud{ std::make_shared<cupoch::geometry::PointCloud>() };
+    // // auto filtered_open3d_cloud{std::make_shared<open3d::geometry::PointCloud>()};
+    pcl::PointCloud<PointT>::Ptr filtered_pcl_ptr{ new pcl::PointCloud<PointT> };
+
+    // 体素滤波
+    t1 = ros::WallTime::now();
+    if (m_is_downsample)
+    {
+      if (m_is_use_gpu)
+      {
+        if (m_is_use_open3d)
+        {
+          // filtered_open3d_cloud = m_points_open3d_cloud->VoxelDownSample(m_downsample_res);
+          // ROS_INFO("m_detect_open3d_thread-After Voxel size is %d .", filtered_open3d_cloud->points_.size());
+        }
+        else
+        {
+          filtered_cupoch_cloud = m_points_cupoch_cloud->VoxelDownSample(m_downsample_res);
+          ROS_INFO("m_detect_cupoch_thread-After Voxel size is %d .", filtered_cupoch_cloud->points_.size());
+        }
+      }
+      else
+      {
+        // pcl
+        voxelFilter(m_points_pcl_cloud, m_downsample_res);
+        filtered_pcl_ptr = m_points_pcl_cloud;
+        ROS_INFO("m_detect_pcl_thread-After Voxel size is %d .", filtered_pcl_ptr->size());
+      }
+    }
+    else
+    {
+      if (m_is_use_gpu)
+      {
+        if (m_is_use_open3d)
+        {
+          // filtered_open3d_cloud = m_points_open3d_cloud;
+          // ROS_INFO("m_detect_open3d_thread-After Voxel size is %d .", filtered_open3d_cloud->points_.size());
+        }
+        else
+        {
+          filtered_cupoch_cloud = m_points_cupoch_cloud;
+          ROS_INFO("m_detect_cupoch_thread-After Voxel size is %d .", filtered_cupoch_cloud->points_.size());
+        }
+      }
+      else
+      {
+        filtered_pcl_ptr = m_points_pcl_cloud;
+      }
+    }
+    t2 = ros::WallTime::now();
+    ROS_INFO_STREAM("detect_cupoch_thread voxelFilter_time: " << (t2 - t1).toSec() * 1000.0 << "[ms]");
+    end = ros::WallTime::now();
+    ROS_INFO_STREAM("detect_cupoch_thread processing_time: " << (end - start).toSec() * 1000.0 << "[ms]");
+
+    if (m_is_pub_pc)
+    {
+      t1 = ros::WallTime::now();
+      if (m_is_use_gpu)
+      {
+        if (m_is_use_open3d)
+        {
+          // open3d_conversions::open3dToRos(filtered_open3d_cloud, m_pub_cupoch_pc, "/gpuac/pointcloud_frame");
+        }
+        else
+        {
+          cupoch_conversions::cupochToRos(filtered_cupoch_cloud, m_pub_cupoch_pc, "/gpuac/pointcloud_frame");
+        }
+      }
+      else
+      {
+        pcl::toROSMsg(*filtered_pcl_ptr, m_pub_cupoch_pc);
+      }
+      m_pub_cupoch_pc.header.stamp = ros::Time::now();
+      m_pub_cupoch_pc.header.frame_id = "/gpuac/pointcloud_frame";
+      m_voxel_cupoch_pub.publish(m_pub_cupoch_pc);
+      t2 = ros::WallTime::now();
+      ROS_INFO_STREAM("detect_cupoch_thread cupochToRos time: " << (t2 - t1).toSec() * 1000.0 << "[ms]");
+    }
+    ROS_INFO_STREAM("################END#####################################");
 
     ROS_INFO_STREAM_ONCE("points_callback end");
 }
